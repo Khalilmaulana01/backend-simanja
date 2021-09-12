@@ -1,4 +1,5 @@
 require('dotenv').config();
+const Jwt = require('@hapi/jwt');
 const Hapi = require('@hapi/hapi');
 
 const init = async () => {
@@ -10,6 +11,29 @@ const init = async () => {
         origin: ['*'],
       },
     },
+  });
+
+  await server.register([
+    {
+      plugin: Jwt,
+    },
+  ]);
+
+  server.auth.strategy('simanja_jwt, jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      // TODO: put into .dotenv
+      maxAgeSec: process.env.ACCESS_TOKEN_AGE, // 4 hours
+    },
+    validate: (artifacts) => ({
+      isValid: true,
+      credential: {
+        id: artifacts.decoded.payload.id,
+      },
+    }),
   });
 
   await server.start();
